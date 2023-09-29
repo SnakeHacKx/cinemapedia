@@ -1,3 +1,4 @@
+import 'package:cinemapedia/infrastructure/models/the_moviedb/movie_details.dart';
 import 'package:dio/dio.dart';
 
 import 'package:cinemapedia/config/constants/environment.dart';
@@ -17,8 +18,7 @@ class TheMovieDbDatasource extends MoviesDatasource {
     ),
   );
 
-
-  List<Movie> _jsonToMovies(Map<String, dynamic> json){
+  List<Movie> _jsonToMovies(Map<String, dynamic> json) {
     final movieDbReponse = TheMovieDbResponse.fromJson(json);
 
     final List<Movie> movies = movieDbReponse.results
@@ -42,7 +42,7 @@ class TheMovieDbDatasource extends MoviesDatasource {
 
     return _jsonToMovies(resp.data);
   }
-  
+
   @override
   Future<List<Movie>> getPopular({int page = 1}) async {
     final resp = await dio.get(
@@ -52,7 +52,7 @@ class TheMovieDbDatasource extends MoviesDatasource {
 
     return _jsonToMovies(resp.data);
   }
-  
+
   @override
   Future<List<Movie>> getUpcoming({int page = 1}) async {
     final resp = await dio.get(
@@ -62,12 +62,38 @@ class TheMovieDbDatasource extends MoviesDatasource {
 
     return _jsonToMovies(resp.data);
   }
-  
+
   @override
   Future<List<Movie>> getTopRated({int page = 1}) async {
     final resp = await dio.get(
       '/movie/top_rated',
       queryParameters: {'page': page},
+    );
+
+    return _jsonToMovies(resp.data);
+  }
+
+  @override
+  Future<Movie> getMovieById(String id) async {
+    final resp = await dio.get('/movie/$id');
+
+    if (resp.statusCode != 200) throw Exception('Movie with id $id not found');
+
+    final movieDetails = MovieDetails.fromJson(resp.data);
+
+    final Movie movie = MovieMapper.movieDetailsToEntity(movieDetails);
+
+    return movie;
+  }
+
+  @override
+  Future<List<Movie>> searchMovies(String query) async {
+
+    if (query.isEmpty) return [];
+
+    final resp = await dio.get(
+      '/search/movie',
+      queryParameters: {'query': query},
     );
 
     return _jsonToMovies(resp.data);
